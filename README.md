@@ -1,0 +1,2 @@
+Offical GitHUB Repo for CSE3120 CONTEST 1
+LET'S GO!
