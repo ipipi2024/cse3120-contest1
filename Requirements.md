@@ -75,29 +75,6 @@ o	If equal: Push (tie)
 o	Show final hands
 o	Show totals
 o	Announce winner
-________________________________________
-Data Structures Needed (Assembly)
-; Data Structures Needed (Assembly)
-.data
-; Card counts (13 bytes, one per rank)
-cardCounts DB 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4
- 
-; Player hand (store up to 11 cards max - rare but possible)
-playerCards DB 11 DUP(?)
-playerCardCount DB 0
-playerTotal DB 0
- 
-; Dealer hand
-dealerCards DB 11 DUP(?)
-dealerCardCount DB 0
-dealerTotal DB 0
-Key Functions to Implement
-1.	generateCard - generates 1-13, checks count, decrements
-2.	calculateHandValue - sums card values, handles Ace as 1/11
-3.	checkBlackjack - determines if hand is natural 21
-4.	checkBust - determines if hand > 21
-5.	dealerLogic - automated dealer play
-6.	compareHands - determines winner
-7.	displayHand - shows cards and total
+
 
 
