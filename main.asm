@@ -30,6 +30,27 @@ msgHit BYTE "Hit", 0
 msgStand BYTE "Stand", 0
 playerChoice BYTE ?
 
+; Card names for display
+cardAce BYTE "Ace", 0
+card2 BYTE "2", 0
+card3 BYTE "3", 0
+card4 BYTE "4", 0
+card5 BYTE "5", 0
+card6 BYTE "6", 0
+card7 BYTE "7", 0
+card8 BYTE "8", 0
+card9 BYTE "9", 0
+card10 BYTE "10", 0
+cardJack BYTE "Jack", 0
+cardQueen BYTE "Queen", 0
+cardKing BYTE "King", 0
+
+; Game display messages
+msgPlayerHand BYTE "Your hand: ", 0
+msgDealerHand BYTE "Dealer shows: ", 0
+msgDealerHidden BYTE "Dealer has: [Hidden Card] ", 0
+msgComma BYTE ", ", 0
+
 .code
 
 ;------------------------------------------
@@ -133,6 +154,83 @@ faceValue:
     ; EAX already contains the face value (2-10)
     ret
 GetCardValue ENDP
+
+;------------------------------------------
+; GetCardName PROC
+; Description: Returns a pointer to the card name string
+; Input: EAX = card rank (1-13)
+; Output: EDX = pointer to card name string
+; Modifies: EDX only
+;------------------------------------------
+GetCardName PROC
+    cmp eax, 1
+    je isAce
+    cmp eax, 2
+    je is2
+    cmp eax, 3
+    je is3
+    cmp eax, 4
+    je is4
+    cmp eax, 5
+    je is5
+    cmp eax, 6
+    je is6
+    cmp eax, 7
+    je is7
+    cmp eax, 8
+    je is8
+    cmp eax, 9
+    je is9
+    cmp eax, 10
+    je is10
+    cmp eax, 11
+    je isJack
+    cmp eax, 12
+    je isQueen
+    cmp eax, 13
+    je isKing
+    ret
+
+isAce:
+    mov edx, OFFSET cardAce
+    ret
+is2:
+    mov edx, OFFSET card2
+    ret
+is3:
+    mov edx, OFFSET card3
+    ret
+is4:
+    mov edx, OFFSET card4
+    ret
+is5:
+    mov edx, OFFSET card5
+    ret
+is6:
+    mov edx, OFFSET card6
+    ret
+is7:
+    mov edx, OFFSET card7
+    ret
+is8:
+    mov edx, OFFSET card8
+    ret
+is9:
+    mov edx, OFFSET card9
+    ret
+is10:
+    mov edx, OFFSET card10
+    ret
+isJack:
+    mov edx, OFFSET cardJack
+    ret
+isQueen:
+    mov edx, OFFSET cardQueen
+    ret
+isKing:
+    mov edx, OFFSET cardKing
+    ret
+GetCardName ENDP
 
 ;------------------------------------------
 ; CalculateHandValue PROC
@@ -253,8 +351,10 @@ DisplayHand PROC
     push eax
     push edx
     push ebx
+    push edi
 
     mov ebx, ecx          ; save hand size
+    mov edi, 0            ; counter for commas
 
     ; Display "Hand: "
     mov edx, OFFSET msgHand
@@ -263,15 +363,25 @@ DisplayHand PROC
     ; Display each card
     mov ecx, ebx
 displayLoop:
-    mov eax, [esi]
-    call WriteDec
-    mov edx, OFFSET msgSpace
+    ; Add comma separator (except before first card)
+    cmp edi, 0
+    je skipComma
+    push eax
+    mov edx, OFFSET msgComma
     call WriteString
+    pop eax
+
+skipComma:
+    ; Get card rank and display its name
+    mov eax, [esi]
+    call GetCardName      ; EDX = pointer to card name
+    call WriteString
+
+    inc edi               ; increment card counter
     add esi, 4
     loop displayLoop
 
     ; Calculate and display total
-    ; ebx still contains hand size
     ; Reset ESI to start of hand (subtract hand_size * 4 bytes)
     mov edx, ebx
     shl edx, 2            ; edx = hand_size * 4
@@ -284,6 +394,7 @@ displayLoop:
     call WriteDec
     call Crlf
 
+    pop edi
     pop ebx
     pop edx
     pop eax
@@ -293,53 +404,139 @@ displayLoop:
 DisplayHand ENDP
 
 ;------------------------------------------
+; DisplayGameState PROC
+; Description: Displays player's full hand and dealer's visible card
+; Input: None (uses playerHand, playerHandSize, dealerHand arrays)
+; Output: None
+; Modifies: EAX, ECX, EDX, ESI
+;------------------------------------------
+DisplayGameState PROC
+    push eax
+    push ecx
+    push edx
+    push esi
+
+    call Crlf
+
+    ; Display dealer's hand (only first card visible)
+    mov edx, OFFSET msgDealerHidden
+    call WriteString
+
+    ; Show first dealer card
+    mov eax, dealerHand[0]
+    call GetCardName
+    call WriteString
+    call Crlf
+
+    ; Display player's full hand
+    mov edx, OFFSET msgPlayerHand
+    call WriteString
+
+    ; Display all player cards with commas
+    mov esi, OFFSET playerHand
+    mov ecx, playerHandSize
+    mov edi, 0            ; comma counter
+
+displayPlayerLoop:
+    cmp ecx, 0
+    je doneDisplaying
+
+    ; Add comma separator (except before first card)
+    cmp edi, 0
+    je skipPlayerComma
+    push eax
+    mov edx, OFFSET msgComma
+    call WriteString
+    pop eax
+
+skipPlayerComma:
+    ; Display card name
+    mov eax, [esi]
+    call GetCardName
+    call WriteString
+
+    inc edi
+    add esi, 4
+    dec ecx
+    jmp displayPlayerLoop
+
+doneDisplaying:
+    ; Calculate and display player total
+    mov esi, OFFSET playerHand
+    mov ecx, playerHandSize
+    call CalculateHandValue
+
+    mov edx, OFFSET msgTotal
+    call WriteString
+    call WriteDec
+    call Crlf
+    call Crlf
+
+    pop esi
+    pop edx
+    pop ecx
+    pop eax
+    ret
+DisplayGameState ENDP
+
+;------------------------------------------
 ; main PROC
-; Description: Test harness for GetPlayerChoice
+; Description: Test harness for display functions
 ;------------------------------------------
 main PROC
     call Randomize
 
-    ; Setup a test hand [10, 7] = 17
-    mov playerHand[0], 10
-    mov playerHand[4], 7
+    ; Test 1: Display various hands with card names
+    ; [Ace, King] = 21 (Blackjack)
+    mov playerHand[0], 1
+    mov playerHand[4], 13
     mov esi, OFFSET playerHand
     mov ecx, 2
     call DisplayHand
-    call Crlf
 
-    ; Test input loop - ask 3 times
-    mov ebx, 0
-inputTestLoop:
-    ; Get player choice
-    call GetPlayerChoice
+    ; [7, 8, 6] = 21
+    mov playerHand[0], 7
+    mov playerHand[4], 8
+    mov playerHand[8], 6
+    mov esi, OFFSET playerHand
+    mov ecx, 3
+    call DisplayHand
 
-    ; Display what they chose
-    mov edx, OFFSET msgYouChose
-    call WriteString
+    ; [Jack, Queen] = 20
+    mov playerHand[0], 11
+    mov playerHand[4], 12
+    mov esi, OFFSET playerHand
+    mov ecx, 2
+    call DisplayHand
 
-    cmp al, 'H'
-    jne isStand
-    mov edx, OFFSET msgHit
-    jmp displayChoice
+    ; Test 2: Display game state (dealer + player)
+    ; Setup player: [10, 7] = 17
+    mov playerHand[0], 10
+    mov playerHand[4], 7
+    mov playerHandSize, 2
 
-isStand:
-    mov edx, OFFSET msgStand
+    ; Setup dealer: [Ace, ?]
+    mov dealerHand[0], 1
+    mov dealerHand[4], 10
+    mov dealerHandSize, 2
 
-displayChoice:
-    call WriteString
-    call Crlf
-    call Crlf
+    call DisplayGameState
 
-    ; Check if Stand was chosen - if so, exit
-    cmp playerChoice, 'S'
-    je endProgram
+    ; Test 3: Test with a larger player hand
+    ; Player: [5, 3, 2, 9] = 19
+    mov playerHand[0], 5
+    mov playerHand[4], 3
+    mov playerHand[8], 2
+    mov playerHand[12], 9
+    mov playerHandSize, 4
 
-    ; Otherwise continue loop (simulate adding a card)
-    inc ebx
-    cmp ebx, 3
-    jb inputTestLoop
+    ; Dealer: [King, ?]
+    mov dealerHand[0], 13
+    mov dealerHand[4], 7
+    mov dealerHandSize, 2
 
-endProgram:
+    call DisplayGameState
+
     invoke ExitProcess, 0
 main ENDP
 END main
