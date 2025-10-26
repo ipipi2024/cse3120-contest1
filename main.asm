@@ -72,6 +72,16 @@ msgPlayerBlackjackWins BYTE "Player has BLACKJACK! Player wins!", 0
 msgDealerBlackjackWins BYTE "Dealer has BLACKJACK! Dealer wins!", 0
 msgBothBlackjack BYTE "Both have BLACKJACK! Push!", 0
 
+; Game flow messages
+msgWelcome BYTE "========================================", 0
+msgTitle BYTE "       BLACKJACK GAME", 0
+msgDivider BYTE "========================================", 0
+msgDealing BYTE "Dealing cards...", 0
+msgPlayerTurn BYTE "--- YOUR TURN ---", 0
+msgDealerTurn BYTE "--- DEALER'S TURN ---", 0
+msgGameOver BYTE "========== GAME OVER ==========", 0
+msgNewCard BYTE "New card: ", 0
+
 .code
 
 ;------------------------------------------
@@ -583,6 +593,163 @@ winnerDone:
 DetermineWinner ENDP
 
 ;------------------------------------------
+; PlayBlackjack PROC
+; Description: Main game procedure - integrates all components
+; Input: None
+; Output: None
+; Modifies: All game state variables
+;------------------------------------------
+PlayBlackjack PROC
+    push eax
+    push ebx
+    push ecx
+    push edx
+    push esi
+
+    ; Display welcome message
+    mov edx, OFFSET msgWelcome
+    call WriteString
+    call Crlf
+    mov edx, OFFSET msgTitle
+    call WriteString
+    call Crlf
+    mov edx, OFFSET msgDivider
+    call WriteString
+    call Crlf
+    call Crlf
+
+    ; Initialize deck
+    call InitializeDeck
+
+    ; Deal initial cards
+    mov edx, OFFSET msgDealing
+    call WriteString
+    call Crlf
+
+    ; Player card 1
+    call DrawCard
+    mov playerHand[0], eax
+    mov playerHandSize, 1
+
+    ; Dealer card 1
+    call DrawCard
+    mov dealerHand[0], eax
+    mov dealerHandSize, 1
+
+    ; Player card 2
+    call DrawCard
+    mov playerHand[4], eax
+    mov playerHandSize, 2
+
+    ; Dealer card 2
+    call DrawCard
+    mov dealerHand[4], eax
+    mov dealerHandSize, 2
+
+    call Crlf
+
+    ; Display initial game state
+    call DisplayGameState
+
+    ; Check for natural blackjack
+    mov esi, OFFSET playerHand
+    mov ecx, playerHandSize
+    call IsBlackjack
+    mov ebx, eax              ; save player blackjack status
+
+    mov esi, OFFSET dealerHand
+    mov ecx, dealerHandSize
+    call IsBlackjack
+    push eax                  ; save dealer blackjack status
+
+    ; If either has blackjack, game ends immediately
+    pop eax                   ; dealer blackjack
+    cmp ebx, 1
+    je endGameNatural
+    cmp eax, 1
+    je endGameNatural
+
+    ; Player's turn
+    mov edx, OFFSET msgPlayerTurn
+    call WriteString
+    call Crlf
+
+playerTurnLoop:
+    ; Get player choice
+    call GetPlayerChoice
+
+    cmp al, 'S'
+    je playerStands
+
+    ; Player hits
+    call DrawCard
+
+    ; Add card to player hand
+    mov ecx, playerHandSize
+    mov esi, OFFSET playerHand
+    shl ecx, 2            ; convert to byte offset
+    add esi, ecx
+    mov [esi], eax        ; store new card
+
+    ; Increment hand size
+    inc playerHandSize
+
+    ; Display new card
+    mov edx, OFFSET msgNewCard
+    call WriteString
+    call GetCardName
+    call WriteString
+    call Crlf
+
+    ; Display updated hand
+    mov esi, OFFSET playerHand
+    mov ecx, playerHandSize
+    call DisplayHand
+    call Crlf
+
+    ; Check if player busted
+    mov esi, OFFSET playerHand
+    mov ecx, playerHandSize
+    call CalculateHandValue
+    cmp eax, 21
+    ja playerBusted
+    je playerStands       ; if exactly 21, automatically stand
+
+    ; Continue player turn
+    jmp playerTurnLoop
+
+playerStands:
+    call Crlf
+    ; Dealer's turn
+    mov edx, OFFSET msgDealerTurn
+    call WriteString
+    call Crlf
+    call DealerPlay
+    jmp endGame
+
+playerBusted:
+    ; Player busted, dealer wins automatically
+    call Crlf
+
+endGameNatural:
+endGame:
+    ; Determine and display winner
+    call Crlf
+    mov edx, OFFSET msgGameOver
+    call WriteString
+    call Crlf
+    call DetermineWinner
+    call Crlf
+
+    pop esi
+    pop edx
+    pop ecx
+    pop ebx
+    pop eax
+    ret
+PlayBlackjack ENDP
+
+;------------------------------------------
 ; GetPlayerChoice PROC
 ; Description: Prompts the user for Hit or Stand and validates input
 ; Input: None
@@ -770,156 +937,13 @@ DisplayGameState ENDP
 
 ;------------------------------------------
 ; main PROC
-; Description: Test harness for DetermineWinner
+; Description: Entry point - starts the blackjack game
 ;------------------------------------------
 main PROC
-    call Randomize
+    call Randomize        ; Seed random number generator
 
-    ; Test 1: Player blackjack [Ace, King] vs Dealer [10, 9] → Player wins
-    mov edx, OFFSET msgTestBlackjack
-    call WriteString
-    mov playerHand[0], 1
-    mov playerHand[4], 13
-    mov playerHandSize, 2
-    mov dealerHand[0], 10
-    mov dealerHand[4], 9
-    mov dealerHandSize, 2
-    mov esi, OFFSET playerHand
-    mov ecx, 2
-    call DisplayHand
-    mov esi, OFFSET dealerHand
-    mov ecx, 2
-    call DisplayHand
-    call DetermineWinner
-    call Crlf
-
-    ; Test 2: Both blackjack [Ace, 10] vs [Ace, Jack] → Push
-    mov edx, OFFSET msgTestBlackjack
-    call WriteString
-    mov playerHand[0], 1
-    mov playerHand[4], 10
-    mov playerHandSize, 2
-    mov dealerHand[0], 1
-    mov dealerHand[4], 11
-    mov dealerHandSize, 2
-    mov esi, OFFSET playerHand
-    mov ecx, 2
-    call DisplayHand
-    mov esi, OFFSET dealerHand
-    mov ecx, 2
-    call DisplayHand
-    call DetermineWinner
-    call Crlf
-
-    ; Test 3: Dealer blackjack [Ace, Queen] vs Player [10, 10] → Dealer wins
-    mov edx, OFFSET msgTestBlackjack
-    call WriteString
-    mov playerHand[0], 10
-    mov playerHand[4], 10
-    mov playerHandSize, 2
-    mov dealerHand[0], 1
-    mov dealerHand[4], 12
-    mov dealerHandSize, 2
-    mov esi, OFFSET playerHand
-    mov ecx, 2
-    call DisplayHand
-    mov esi, OFFSET dealerHand
-    mov ecx, 2
-    call DisplayHand
-    call DetermineWinner
-    call Crlf
-
-    ; Test 4: Player bust [10, 7, 8] = 25 vs Dealer [10, 7] → Dealer wins
-    mov edx, OFFSET msgTestBlackjack
-    call WriteString
-    mov playerHand[0], 10
-    mov playerHand[4], 7
-    mov playerHand[8], 8
-    mov playerHandSize, 3
-    mov dealerHand[0], 10
-    mov dealerHand[4], 7
-    mov dealerHandSize, 2
-    mov esi, OFFSET playerHand
-    mov ecx, 3
-    call DisplayHand
-    mov esi, OFFSET dealerHand
-    mov ecx, 2
-    call DisplayHand
-    call DetermineWinner
-    call Crlf
-
-    ; Test 5: Dealer bust [10, 9, 5] = 24 vs Player [10, 8] → Player wins
-    mov edx, OFFSET msgTestBlackjack
-    call WriteString
-    mov playerHand[0], 10
-    mov playerHand[4], 8
-    mov playerHandSize, 2
-    mov dealerHand[0], 10
-    mov dealerHand[4], 9
-    mov dealerHand[8], 5
-    mov dealerHandSize, 3
-    mov esi, OFFSET playerHand
-    mov ecx, 2
-    call DisplayHand
-    mov esi, OFFSET dealerHand
-    mov ecx, 3
-    call DisplayHand
-    call DetermineWinner
-    call Crlf
-
-    ; Test 6: Player higher [10, 10] = 20 vs Dealer [10, 8] = 18 → Player wins
-    mov edx, OFFSET msgTestBlackjack
-    call WriteString
-    mov playerHand[0], 10
-    mov playerHand[4], 10
-    mov playerHandSize, 2
-    mov dealerHand[0], 10
-    mov dealerHand[4], 8
-    mov dealerHandSize, 2
-    mov esi, OFFSET playerHand
-    mov ecx, 2
-    call DisplayHand
-    mov esi, OFFSET dealerHand
-    mov ecx, 2
-    call DisplayHand
-    call DetermineWinner
-    call Crlf
-
-    ; Test 7: Dealer higher [10, 9] = 19 vs Player [10, 7] = 17 → Dealer wins
-    mov edx, OFFSET msgTestBlackjack
-    call WriteString
-    mov playerHand[0], 10
-    mov playerHand[4], 7
-    mov playerHandSize, 2
-    mov dealerHand[0], 10
-    mov dealerHand[4], 9
-    mov dealerHandSize, 2
-    mov esi, OFFSET playerHand
-    mov ecx, 2
-    call DisplayHand
-    mov esi, OFFSET dealerHand
-    mov ecx, 2
-    call DisplayHand
-    call DetermineWinner
-    call Crlf
-
-    ; Test 8: Equal totals [10, 9] = 19 vs [9, 10] = 19 → Push
-    mov edx, OFFSET msgTestBlackjack
-    call WriteString
-    mov playerHand[0], 10
-    mov playerHand[4], 9
-    mov playerHandSize, 2
-    mov dealerHand[0], 9
-    mov dealerHand[4], 10
-    mov dealerHandSize, 2
-    mov esi, OFFSET playerHand
-    mov ecx, 2
-    call DisplayHand
-    mov esi, OFFSET dealerHand
-    mov ecx, 2
-    call DisplayHand
-    call DetermineWinner
-    call Crlf
+    ; Play blackjack game
+    call PlayBlackjack
 
     invoke ExitProcess, 0
 main ENDP

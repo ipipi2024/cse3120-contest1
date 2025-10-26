@@ -1,3 +1,4 @@
+ Component Break down
  
   Component 1: Random Number Generator (Foundation)
 
