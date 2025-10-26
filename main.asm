@@ -51,6 +51,11 @@ msgDealerHand BYTE "Dealer shows: ", 0
 msgDealerHidden BYTE "Dealer has: [Hidden Card] ", 0
 msgComma BYTE ", ", 0
 
+; Blackjack messages
+msgBlackjack BYTE "BLACKJACK!", 0
+msgNotBlackjack BYTE "Not a blackjack (but total is 21)", 0
+msgTestBlackjack BYTE "Testing: ", 0
+
 .code
 
 ;------------------------------------------
@@ -294,6 +299,45 @@ emptyHand:
 CalculateHandValue ENDP
 
 ;------------------------------------------
+; IsBlackjack PROC
+; Description: Checks if a hand is a natural blackjack (21 with exactly 2 cards)
+; Input: ESI = pointer to hand array (DWORD array of card ranks)
+;        ECX = hand size (number of cards)
+; Output: EAX = 1 if blackjack, 0 otherwise
+; Modifies: EAX
+;------------------------------------------
+IsBlackjack PROC
+    push ecx
+    push esi
+    push ebx
+
+    ; Check if hand has exactly 2 cards
+    cmp ecx, 2
+    jne notBlackjack      ; if not 2 cards, not blackjack
+
+    ; Calculate hand value
+    call CalculateHandValue
+    mov ebx, eax          ; save total
+
+    ; Check if total is 21
+    cmp ebx, 21
+    jne notBlackjack
+
+    ; It's a blackjack!
+    mov eax, 1
+    jmp endCheck
+
+notBlackjack:
+    mov eax, 0
+
+endCheck:
+    pop ebx
+    pop esi
+    pop ecx
+    ret
+IsBlackjack ENDP
+
+;------------------------------------------
 ; GetPlayerChoice PROC
 ; Description: Prompts the user for Hit or Stand and validates input
 ; Input: None
@@ -481,62 +525,156 @@ DisplayGameState ENDP
 
 ;------------------------------------------
 ; main PROC
-; Description: Test harness for display functions
+; Description: Test harness for IsBlackjack
 ;------------------------------------------
 main PROC
     call Randomize
 
-    ; Test 1: Display various hands with card names
-    ; [Ace, King] = 21 (Blackjack)
+    ; Test 1: [Ace, King] = 21 with 2 cards → BLACKJACK
+    mov edx, OFFSET msgTestBlackjack
+    call WriteString
     mov playerHand[0], 1
     mov playerHand[4], 13
     mov esi, OFFSET playerHand
     mov ecx, 2
     call DisplayHand
-
-    ; [7, 8, 6] = 21
-    mov playerHand[0], 7
-    mov playerHand[4], 8
-    mov playerHand[8], 6
     mov esi, OFFSET playerHand
-    mov ecx, 3
-    call DisplayHand
+    mov ecx, 2
+    call IsBlackjack
+    cmp eax, 1
+    je showBlackjack1
+    mov edx, OFFSET msgNotBlackjack
+    call WriteString
+    call Crlf
+    jmp test2
+showBlackjack1:
+    mov edx, OFFSET msgBlackjack
+    call WriteString
+    call Crlf
 
-    ; [Jack, Queen] = 20
-    mov playerHand[0], 11
-    mov playerHand[4], 12
+test2:
+    ; Test 2: [Ace, 10] = 21 with 2 cards → BLACKJACK
+    call Crlf
+    mov edx, OFFSET msgTestBlackjack
+    call WriteString
+    mov playerHand[0], 1
+    mov playerHand[4], 10
     mov esi, OFFSET playerHand
     mov ecx, 2
     call DisplayHand
+    mov esi, OFFSET playerHand
+    mov ecx, 2
+    call IsBlackjack
+    cmp eax, 1
+    je showBlackjack2
+    mov edx, OFFSET msgNotBlackjack
+    call WriteString
+    call Crlf
+    jmp test3
+showBlackjack2:
+    mov edx, OFFSET msgBlackjack
+    call WriteString
+    call Crlf
 
-    ; Test 2: Display game state (dealer + player)
-    ; Setup player: [10, 7] = 17
-    mov playerHand[0], 10
+test3:
+    ; Test 3: [7, 7, 7] = 21 with 3 cards → NOT BLACKJACK
+    call Crlf
+    mov edx, OFFSET msgTestBlackjack
+    call WriteString
+    mov playerHand[0], 7
     mov playerHand[4], 7
-    mov playerHandSize, 2
+    mov playerHand[8], 7
+    mov esi, OFFSET playerHand
+    mov ecx, 3
+    call DisplayHand
+    mov esi, OFFSET playerHand
+    mov ecx, 3
+    call IsBlackjack
+    cmp eax, 1
+    je showBlackjack3
+    mov edx, OFFSET msgNotBlackjack
+    call WriteString
+    call Crlf
+    jmp test4
+showBlackjack3:
+    mov edx, OFFSET msgBlackjack
+    call WriteString
+    call Crlf
 
-    ; Setup dealer: [Ace, ?]
-    mov dealerHand[0], 1
-    mov dealerHand[4], 10
-    mov dealerHandSize, 2
+test4:
+    ; Test 4: [10, 9] = 19 with 2 cards → NOT BLACKJACK
+    call Crlf
+    mov edx, OFFSET msgTestBlackjack
+    call WriteString
+    mov playerHand[0], 10
+    mov playerHand[4], 9
+    mov esi, OFFSET playerHand
+    mov ecx, 2
+    call DisplayHand
+    mov esi, OFFSET playerHand
+    mov ecx, 2
+    call IsBlackjack
+    cmp eax, 1
+    je showBlackjack4
+    mov edx, OFFSET msgNotBlackjack
+    call WriteString
+    call Crlf
+    jmp test5
+showBlackjack4:
+    mov edx, OFFSET msgBlackjack
+    call WriteString
+    call Crlf
 
-    call DisplayGameState
-
-    ; Test 3: Test with a larger player hand
-    ; Player: [5, 3, 2, 9] = 19
+test5:
+    ; Test 5: [5, 6, 10] = 21 with 3 cards → NOT BLACKJACK
+    call Crlf
+    mov edx, OFFSET msgTestBlackjack
+    call WriteString
     mov playerHand[0], 5
-    mov playerHand[4], 3
-    mov playerHand[8], 2
-    mov playerHand[12], 9
-    mov playerHandSize, 4
+    mov playerHand[4], 6
+    mov playerHand[8], 10
+    mov esi, OFFSET playerHand
+    mov ecx, 3
+    call DisplayHand
+    mov esi, OFFSET playerHand
+    mov ecx, 3
+    call IsBlackjack
+    cmp eax, 1
+    je showBlackjack5
+    mov edx, OFFSET msgNotBlackjack
+    call WriteString
+    call Crlf
+    jmp test6
+showBlackjack5:
+    mov edx, OFFSET msgBlackjack
+    call WriteString
+    call Crlf
 
-    ; Dealer: [King, ?]
-    mov dealerHand[0], 13
-    mov dealerHand[4], 7
-    mov dealerHandSize, 2
+test6:
+    ; Test 6: [Queen, Ace] = 21 with 2 cards → BLACKJACK
+    call Crlf
+    mov edx, OFFSET msgTestBlackjack
+    call WriteString
+    mov playerHand[0], 12
+    mov playerHand[4], 1
+    mov esi, OFFSET playerHand
+    mov ecx, 2
+    call DisplayHand
+    mov esi, OFFSET playerHand
+    mov ecx, 2
+    call IsBlackjack
+    cmp eax, 1
+    je showBlackjack6
+    mov edx, OFFSET msgNotBlackjack
+    call WriteString
+    call Crlf
+    jmp endTests
+showBlackjack6:
+    mov edx, OFFSET msgBlackjack
+    call WriteString
+    call Crlf
 
-    call DisplayGameState
-
+endTests:
     invoke ExitProcess, 0
 main ENDP
 END main
