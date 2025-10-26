@@ -11,6 +11,17 @@ msgRank BYTE "Rank: ", 0
 msgValue BYTE " -> Value: ", 0
 currentCard DWORD ?           ; temporary storage for current card
 
+; Hand storage (max 11 cards possible in blackjack before bust)
+playerHand DWORD 11 DUP(0)    ; player's cards
+playerHandSize DWORD 0        ; number of cards in player hand
+dealerHand DWORD 11 DUP(0)    ; dealer's cards
+dealerHandSize DWORD 0        ; number of cards in dealer hand
+
+; Test messages
+msgHand BYTE "Hand: ", 0
+msgTotal BYTE " = Total: ", 0
+msgSpace BYTE " ", 0
+
 .code
 
 ;------------------------------------------
@@ -116,36 +127,176 @@ faceValue:
 GetCardValue ENDP
 
 ;------------------------------------------
-; main PROC
-; Description: Test harness - draws all 52 cards and displays them
+; CalculateHandValue PROC
+; Description: Calculates the total value of a hand with Ace optimization
+;              Aces are counted as 11 if it doesn't cause a bust, otherwise 1
+; Input: ESI = pointer to hand array (DWORD array of card ranks)
+;        ECX = hand size (number of cards)
+; Output: EAX = total hand value
+; Modifies: EAX, EBX, ECX, EDX
 ;------------------------------------------
-main PROC
-    call Randomize        ; Seed the random number generator
-    call InitializeDeck   ; Initialize deck to 4 of each rank
+CalculateHandValue PROC
+    push esi
+    push edi
 
-drawLoop:
-    call DrawCard         ; Draw a card (result in EAX)
-    mov currentCard, eax  ; Save the card rank
+    mov eax, 0            ; total = 0
+    mov ebx, 0            ; aceCount = 0
+    mov edi, ecx          ; save hand size
 
-    ; Display "Rank: X"
-    mov edx, OFFSET msgRank
+    ; If hand is empty, return 0
+    cmp edi, 0
+    je emptyHand
+
+calculateLoop:
+    ; Get current card rank
+    mov edx, [esi]
+    push eax              ; save current total
+    mov eax, edx
+
+    ; Check if it's an Ace
+    cmp eax, 1
+    jne notAce
+    inc ebx               ; increment ace count
+
+notAce:
+    ; Convert rank to value
+    call GetCardValue
+    mov edx, eax          ; save card value
+    pop eax               ; restore total
+    add eax, edx          ; total += card value
+
+    ; Move to next card
+    add esi, 4
+    dec edi
+    jnz calculateLoop
+
+    ; Now optimize Aces: if we have an Ace and total + 10 <= 21, add 10
+    cmp ebx, 0            ; do we have any Aces?
+    je noAceOptimization
+
+    add eax, 10           ; try counting one Ace as 11
+    cmp eax, 21
+    jbe aceOptimized      ; if total <= 21, keep it
+    sub eax, 10           ; otherwise, revert back
+
+aceOptimized:
+noAceOptimization:
+emptyHand:
+    pop edi
+    pop esi
+    ret
+CalculateHandValue ENDP
+
+;------------------------------------------
+; DisplayHand PROC
+; Description: Helper to display a hand and its total
+; Input: ESI = pointer to hand array
+;        ECX = hand size
+;------------------------------------------
+DisplayHand PROC
+    push ecx
+    push esi
+    push eax
+    push edx
+    push ebx
+
+    mov ebx, ecx          ; save hand size
+
+    ; Display "Hand: "
+    mov edx, OFFSET msgHand
     call WriteString
-    mov eax, currentCard
+
+    ; Display each card
+    mov ecx, ebx
+displayLoop:
+    mov eax, [esi]
     call WriteDec
-
-    ; Display " -> Value: Y"
-    mov edx, OFFSET msgValue
+    mov edx, OFFSET msgSpace
     call WriteString
-    mov eax, currentCard
-    call GetCardValue     ; Convert rank to value
+    add esi, 4
+    loop displayLoop
+
+    ; Calculate and display total
+    ; ebx still contains hand size
+    ; Reset ESI to start of hand (subtract hand_size * 4 bytes)
+    mov edx, ebx
+    shl edx, 2            ; edx = hand_size * 4
+    sub esi, edx          ; ESI back to start of hand
+    mov ecx, ebx          ; ECX = hand size for CalculateHandValue
+    call CalculateHandValue
+
+    mov edx, OFFSET msgTotal
+    call WriteString
     call WriteDec
     call Crlf
 
-    ; Increment and check total cards drawn
-    inc totalCardsDrawn
-    mov eax, totalCardsDrawn
-    cmp eax, 52           ; Have we drawn all 52 cards?
-    jb drawLoop           ; if < 52, continue drawing
+    pop ebx
+    pop edx
+    pop eax
+    pop esi
+    pop ecx
+    ret
+DisplayHand ENDP
+
+;------------------------------------------
+; main PROC
+; Description: Test harness for CalculateHandValue
+;------------------------------------------
+main PROC
+    call Randomize
+
+    ; Test 1: [10, 7] = 17
+    mov playerHand[0], 10
+    mov playerHand[4], 7
+    mov esi, OFFSET playerHand
+    mov ecx, 2
+    call DisplayHand
+
+    ; Test 2: [1, 9] = 20 (Ace as 11)
+    mov playerHand[0], 1
+    mov playerHand[4], 9
+    mov esi, OFFSET playerHand
+    mov ecx, 2
+    call DisplayHand
+
+    ; Test 3: [1, 5, 10] = 16 (Ace as 1)
+    mov playerHand[0], 1
+    mov playerHand[4], 5
+    mov playerHand[8], 10
+    mov esi, OFFSET playerHand
+    mov ecx, 3
+    call DisplayHand
+
+    ; Test 4: [1, 1, 9] = 21 (one Ace as 11, one as 1)
+    mov playerHand[0], 1
+    mov playerHand[4], 1
+    mov playerHand[8], 9
+    mov esi, OFFSET playerHand
+    mov ecx, 3
+    call DisplayHand
+
+    ; Test 5: [1, 10] = 21 (Blackjack)
+    mov playerHand[0], 1
+    mov playerHand[4], 10
+    mov esi, OFFSET playerHand
+    mov ecx, 2
+    call DisplayHand
+
+    ; Test 6: [11, 12, 13] = 30 (all face cards = 10)
+    mov playerHand[0], 11
+    mov playerHand[4], 12
+    mov playerHand[8], 13
+    mov esi, OFFSET playerHand
+    mov ecx, 3
+    call DisplayHand
+
+    ; Test 7: [7, 7, 7] = 21 (three 7s)
+    mov playerHand[0], 7
+    mov playerHand[4], 7
+    mov playerHand[8], 7
+    mov esi, OFFSET playerHand
+    mov ecx, 3
+    call DisplayHand
 
     invoke ExitProcess, 0
 main ENDP
