@@ -7,6 +7,9 @@ ExitProcess proto, dwExitCode:dword
 .data
 deckCounts DWORD 13 DUP(4)   ; 13 card ranks, each starts with count of 4
 totalCardsDrawn DWORD 0       ; total cards drawn from deck
+msgRank BYTE "Rank: ", 0
+msgValue BYTE " -> Value: ", 0
+currentCard DWORD ?           ; temporary storage for current card
 
 .code
 
@@ -81,6 +84,38 @@ tryAgain:
 DrawCard ENDP
 
 ;------------------------------------------
+; GetCardValue PROC
+; Description: Converts card rank (1-13) to blackjack value
+; Input: EAX = card rank (1-13)
+; Output: EAX = blackjack value
+;         1 (Ace) → 1
+;         2-10 → face value (2-10)
+;         11 (Jack), 12 (Queen), 13 (King) → 10
+; Modifies: EAX only
+;------------------------------------------
+GetCardValue PROC
+    ; If rank is 1 (Ace), return 1
+    cmp eax, 1
+    je aceValue
+
+    ; If rank is 2-10, return face value
+    cmp eax, 10
+    jbe faceValue
+
+    ; If rank is 11-13 (Jack, Queen, King), return 10
+    mov eax, 10
+    ret
+
+aceValue:
+    mov eax, 1
+    ret
+
+faceValue:
+    ; EAX already contains the face value (2-10)
+    ret
+GetCardValue ENDP
+
+;------------------------------------------
 ; main PROC
 ; Description: Test harness - draws all 52 cards and displays them
 ;------------------------------------------
@@ -90,7 +125,20 @@ main PROC
 
 drawLoop:
     call DrawCard         ; Draw a card (result in EAX)
-    call WriteDec         ; Display the card rank
+    mov currentCard, eax  ; Save the card rank
+
+    ; Display "Rank: X"
+    mov edx, OFFSET msgRank
+    call WriteString
+    mov eax, currentCard
+    call WriteDec
+
+    ; Display " -> Value: Y"
+    mov edx, OFFSET msgValue
+    call WriteString
+    mov eax, currentCard
+    call GetCardValue     ; Convert rank to value
+    call WriteDec
     call Crlf
 
     ; Increment and check total cards drawn
