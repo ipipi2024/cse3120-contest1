@@ -31,3 +31,6 @@ temp.asm
 *.tmp
 *.bak
 *.swp
+
+#docs
+*.docx
