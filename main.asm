@@ -22,6 +22,14 @@ msgHand BYTE "Hand: ", 0
 msgTotal BYTE " = Total: ", 0
 msgSpace BYTE " ", 0
 
+; User input messages
+msgPrompt BYTE "Hit or Stand? (H/S): ", 0
+msgInvalidInput BYTE "Invalid input! Please enter H or S.", 0
+msgYouChose BYTE "You chose: ", 0
+msgHit BYTE "Hit", 0
+msgStand BYTE "Stand", 0
+playerChoice BYTE ?
+
 .code
 
 ;------------------------------------------
@@ -188,6 +196,52 @@ emptyHand:
 CalculateHandValue ENDP
 
 ;------------------------------------------
+; GetPlayerChoice PROC
+; Description: Prompts the user for Hit or Stand and validates input
+; Input: None
+; Output: AL = 'H' for Hit, 'S' for Stand (uppercase)
+; Modifies: AL, EDX
+;------------------------------------------
+GetPlayerChoice PROC
+    push edx
+
+promptLoop:
+    ; Display prompt
+    mov edx, OFFSET msgPrompt
+    call WriteString
+
+    ; Read single character
+    call ReadChar
+    call WriteChar        ; Echo the character
+    call Crlf
+
+    ; Convert to uppercase for comparison
+    cmp al, 'a'
+    jb checkValid         ; if < 'a', already uppercase or invalid
+    cmp al, 'z'
+    ja checkValid         ; if > 'z', invalid
+    sub al, 32            ; convert lowercase to uppercase
+
+checkValid:
+    ; Check if H or S
+    cmp al, 'H'
+    je validChoice
+    cmp al, 'S'
+    je validChoice
+
+    ; Invalid input - show error and retry
+    mov edx, OFFSET msgInvalidInput
+    call WriteString
+    call Crlf
+    jmp promptLoop
+
+validChoice:
+    mov playerChoice, al
+    pop edx
+    ret
+GetPlayerChoice ENDP
+
+;------------------------------------------
 ; DisplayHand PROC
 ; Description: Helper to display a hand and its total
 ; Input: ESI = pointer to hand array
@@ -240,64 +294,52 @@ DisplayHand ENDP
 
 ;------------------------------------------
 ; main PROC
-; Description: Test harness for CalculateHandValue
+; Description: Test harness for GetPlayerChoice
 ;------------------------------------------
 main PROC
     call Randomize
 
-    ; Test 1: [10, 7] = 17
+    ; Setup a test hand [10, 7] = 17
     mov playerHand[0], 10
     mov playerHand[4], 7
     mov esi, OFFSET playerHand
     mov ecx, 2
     call DisplayHand
+    call Crlf
 
-    ; Test 2: [1, 9] = 20 (Ace as 11)
-    mov playerHand[0], 1
-    mov playerHand[4], 9
-    mov esi, OFFSET playerHand
-    mov ecx, 2
-    call DisplayHand
+    ; Test input loop - ask 3 times
+    mov ebx, 0
+inputTestLoop:
+    ; Get player choice
+    call GetPlayerChoice
 
-    ; Test 3: [1, 5, 10] = 16 (Ace as 1)
-    mov playerHand[0], 1
-    mov playerHand[4], 5
-    mov playerHand[8], 10
-    mov esi, OFFSET playerHand
-    mov ecx, 3
-    call DisplayHand
+    ; Display what they chose
+    mov edx, OFFSET msgYouChose
+    call WriteString
 
-    ; Test 4: [1, 1, 9] = 21 (one Ace as 11, one as 1)
-    mov playerHand[0], 1
-    mov playerHand[4], 1
-    mov playerHand[8], 9
-    mov esi, OFFSET playerHand
-    mov ecx, 3
-    call DisplayHand
+    cmp al, 'H'
+    jne isStand
+    mov edx, OFFSET msgHit
+    jmp displayChoice
 
-    ; Test 5: [1, 10] = 21 (Blackjack)
-    mov playerHand[0], 1
-    mov playerHand[4], 10
-    mov esi, OFFSET playerHand
-    mov ecx, 2
-    call DisplayHand
+isStand:
+    mov edx, OFFSET msgStand
 
-    ; Test 6: [11, 12, 13] = 30 (all face cards = 10)
-    mov playerHand[0], 11
-    mov playerHand[4], 12
-    mov playerHand[8], 13
-    mov esi, OFFSET playerHand
-    mov ecx, 3
-    call DisplayHand
+displayChoice:
+    call WriteString
+    call Crlf
+    call Crlf
 
-    ; Test 7: [7, 7, 7] = 21 (three 7s)
-    mov playerHand[0], 7
-    mov playerHand[4], 7
-    mov playerHand[8], 7
-    mov esi, OFFSET playerHand
-    mov ecx, 3
-    call DisplayHand
+    ; Check if Stand was chosen - if so, exit
+    cmp playerChoice, 'S'
+    je endProgram
 
+    ; Otherwise continue loop (simulate adding a card)
+    inc ebx
+    cmp ebx, 3
+    jb inputTestLoop
+
+endProgram:
     invoke ExitProcess, 0
 main ENDP
 END main
