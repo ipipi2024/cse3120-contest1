@@ -5,7 +5,7 @@ INCLUDE Irvine32.inc
 ExitProcess proto, dwExitCode:dword
 
 .data
-deckCounts DWORD 13 DUP(4)   ; 13 card ranks, each starts with count of 4
+deckCounts DWORD 13 DUP(4)    ; 13 card ranks, each starts with count of 4
 totalCardsDrawn DWORD 0       ; total cards drawn from deck
 msgRank BYTE "Rank: ", 0
 msgValue BYTE " -> Value: ", 0
@@ -103,7 +103,7 @@ InitializeDeck PROC
 
 resetLoop:
     mov [edi], eax
-    add edi, 4
+    add edi, TYPE deckCounts ; advance to next rank
     loop resetLoop
 
     ; Reset total cards drawn
@@ -137,13 +137,13 @@ tryAgain:
     mov ecx, eax          ; save card rank
     dec ecx               ; convert to 0-based index
     mov edi, OFFSET deckCounts
-    mov eax, [edi + ecx*4] ; get deckCounts[rank-1]
+    mov eax, [edi + ecx*TYPE deckCounts] ; get deckCounts[rank-1]
     cmp eax, 0
     je tryAgain           ; if count = 0, try another card
 
     ; Decrement the count for this rank
     dec eax
-    mov [edi + ecx*4], eax
+    mov [edi + ecx*TYPE deckCounts], eax
 
     ; Restore card rank to EAX for return
     mov eax, ecx
@@ -303,7 +303,7 @@ notAce:
     add eax, edx          ; total += card value
 
     ; Move to next card
-    add esi, 4
+    add esi, TYPE playerHand
     dec edi
     jnz calculateLoop
 
@@ -834,7 +834,7 @@ skipComma:
     call WriteString
 
     inc edi               ; increment card counter
-    add esi, 4
+    add esi, TYPE playerHand
     loop displayLoop
 
     ; Calculate and display total
@@ -912,7 +912,7 @@ skipPlayerComma:
     call WriteString
 
     inc edi
-    add esi, 4
+    add esi, TYPE playerHand
     dec ecx
     jmp displayPlayerLoop
 
