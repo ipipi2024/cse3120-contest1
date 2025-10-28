@@ -85,6 +85,19 @@ msgNewCard BYTE "New card: ", 0
 .code
 
 ;------------------------------------------
+; mPrintString MACRO
+; Description: Prints/writes a given string to the screen, then prints a newline
+; Input: string - Address of a string
+; Output: None
+; Modifies: EDX
+;------------------------------------------
+mPrintString MACRO string:REQ
+    mov edx, OFFSET string
+    call WriteString
+    call Crlf
+ENDM
+
+;------------------------------------------
 ; InitializeDeck PROC
 ; Description: Resets the deck to initial state (4 of each rank)
 ; Input: None
