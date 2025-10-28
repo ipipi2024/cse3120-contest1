@@ -1,0 +1,4 @@
+c:\Users\Bread\.vscode\extensions\istareatscreens.masm-runner-0.9.1\native\irvine\SmallWin.inc(11) : Warning A4095: Multiple .MODEL directives, .MODEL ignored
+ c:\Users\Bread\.vscode\extensions\istareatscreens.masm-runner-0.9.1\native\irvine\SmallWin.inc(11): Included by
+  c:\Users\Bread\.vscode\extensions\istareatscreens.masm-runner-0.9.1\native\irvine\Irvine32.inc(5): Included by
+   c:\Users\Bread\Downloads\CSE_3120\Contests\cse3120-contest1\main.temp.asm(4): Main line code

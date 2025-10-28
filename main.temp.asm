@@ -1,7 +1,7 @@
 .386
 .model flat,stdcall
 .stack 4096
-INCLUDE Irvine32.inc
+INCLUDE c:\Users\Bread\.vscode\extensions\istareatscreens.masm-runner-0.9.1\native\irvine\Irvine32.inc
 ExitProcess proto, dwExitCode:dword
 
 .data
@@ -657,13 +657,14 @@ PlayBlackjack PROC
 playerTurnLoop:
     ; Get player choice
     call GetPlayerChoice
-    or al, 20h                ; convert to lowercase
 
     ; Player stands
+    or al, 20h
     cmp al, 's'
     je playerStands
 
     ; Player hits
+    ;or al, 20h
     cmp al, 'h'
     je playerHits
 
@@ -675,9 +676,9 @@ playerHits:
     ; Add card to player hand
     mov ecx, playerHandSize
     mov esi, OFFSET playerHand
-    shl ecx, 2                ; convert to byte offset
+    shl ecx, 2            ; convert to byte offset
     add esi, ecx
-    mov [esi], eax            ; store new card
+    mov [esi], eax        ; store new card
 
     ; Increment hand size
     inc playerHandSize
@@ -700,7 +701,7 @@ playerHits:
     call CalculateHandValue
     cmp eax, 21
     ja playerBusted
-    je playerStands           ; if exactly 21, automatically stand
+    je playerStands       ; if exactly 21, automatically stand
 
     ; Continue player turn
     jmp playerTurnLoop
