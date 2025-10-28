@@ -408,9 +408,7 @@ dealerLoop:
     jae dealerStands      ; if >= 17, dealer stands
 
     ; Dealer hits
-    mov edx, OFFSET msgDealerHits
-    call WriteString
-    call Crlf
+    mPrintString msgDealerHits
 
     ; Draw a card
     call DrawCard
@@ -451,9 +449,8 @@ dealerLoop:
     jmp dealerLoop
 
 dealerStands:
-    mov edx, OFFSET msgDealerStands
-    call WriteString
-    call Crlf
+    mPrintString msgDealerStands
+
     mov edx, OFFSET msgDealerTotal
     call WriteString
     mov eax, ebx
@@ -462,9 +459,7 @@ dealerStands:
     jmp dealerDone
 
 dealerBusted:
-    mov edx, OFFSET msgDealerBust
-    call WriteString
-    call Crlf
+    mPrintString msgDealerBust
 
 dealerDone:
     mov eax, ebx          ; return final total
@@ -521,16 +516,12 @@ DetermineWinner PROC
     cmp edx, 1
     jne playerBlackjackWins
     ; Both have blackjack
-    mov edx, OFFSET msgBothBlackjack
-    call WriteString
-    call Crlf
+    mPrintString msgBothBlackjack
     mov eax, 2                ; Push
     jmp winnerDone
 
 playerBlackjackWins:
-    mov edx, OFFSET msgPlayerBlackjackWins
-    call WriteString
-    call Crlf
+    mPrintString msgPlayerBlackjackWins
     mov eax, 1                ; Player wins
     jmp winnerDone
 
@@ -538,9 +529,7 @@ checkDealerBJ:
     cmp edx, 1
     jne checkBusts
     ; Dealer has blackjack, player doesn't
-    mov edx, OFFSET msgDealerBlackjackWins
-    call WriteString
-    call Crlf
+    mPrintString msgDealerBlackjackWins
     mov eax, 0                ; Dealer wins
     jmp winnerDone
 
@@ -559,41 +548,29 @@ checkBusts:
     jl dealerWinsNormal
 
     ; Equal totals = push
-    mov edx, OFFSET msgPush
-    call WriteString
-    call Crlf
+    mPrintString msgPush
     mov eax, 2                ; Push
     jmp winnerDone
 
 playerBusted:
-    mov edx, OFFSET msgPlayerBust
-    call WriteString
-    call Crlf
-    mov edx, OFFSET msgDealerWins
-    call WriteString
-    call Crlf
+    mPrintString msgPlayerBust
+    mPrintString msgDealerWins
     mov eax, 0                ; Dealer wins
     jmp winnerDone
 
 dealerBusted:
     ; Dealer already printed bust message in DealerPlay
-    mov edx, OFFSET msgPlayerWins
-    call WriteString
-    call Crlf
+    mPrintString msgPlayerWins
     mov eax, 1                ; Player wins
     jmp winnerDone
 
 playerWinsNormal:
-    mov edx, OFFSET msgPlayerWins
-    call WriteString
-    call Crlf
+    mPrintString msgPlayerWins
     mov eax, 1                ; Player wins
     jmp winnerDone
 
 dealerWinsNormal:
-    mov edx, OFFSET msgDealerWins
-    call WriteString
-    call Crlf
+    mPrintString msgDealerWins
     mov eax, 0                ; Dealer wins
 
 winnerDone:
@@ -620,24 +597,16 @@ PlayBlackjack PROC
     push esi
 
     ; Display welcome message
-    mov edx, OFFSET msgWelcome
-    call WriteString
-    call Crlf
-    mov edx, OFFSET msgTitle
-    call WriteString
-    call Crlf
-    mov edx, OFFSET msgDivider
-    call WriteString
-    call Crlf
+    mPrintString msgWelcome
+    mPrintString msgTitle
+    mPrintString msgDivider
     call Crlf
 
     ; Initialize deck
     call InitializeDeck
 
     ; Deal initial cards
-    mov edx, OFFSET msgDealing
-    call WriteString
-    call Crlf
+    mPrintString msgDealing
 
     ; Player card 1
     call DrawCard
@@ -683,9 +652,7 @@ PlayBlackjack PROC
     je endGameNatural
 
     ; Player's turn
-    mov edx, OFFSET msgPlayerTurn
-    call WriteString
-    call Crlf
+    mPrintString msgPlayerTurn
 
 playerTurnLoop:
     ; Get player choice
@@ -711,8 +678,7 @@ playerTurnLoop:
     mov edx, OFFSET msgNewCard
     call WriteString
     call GetCardName
-    call WriteString
-    call Crlf
+    mPrintString msgNewCard
 
     ; Display updated hand
     mov esi, OFFSET playerHand
@@ -734,9 +700,7 @@ playerTurnLoop:
 playerStands:
     call Crlf
     ; Dealer's turn
-    mov edx, OFFSET msgDealerTurn
-    call WriteString
-    call Crlf
+    mPrintString msgDealerTurn
     call DealerPlay
     jmp endGame
 
@@ -748,9 +712,7 @@ endGameNatural:
 endGame:
     ; Determine and display winner
     call Crlf
-    mov edx, OFFSET msgGameOver
-    call WriteString
-    call Crlf
+    mPrintString msgGameOver
     call DetermineWinner
     call Crlf
 
@@ -797,9 +759,7 @@ checkValid:
     je validChoice
 
     ; Invalid input - show error and retry
-    mov edx, OFFSET msgInvalidInput
-    call WriteString
-    call Crlf
+    mPrintString msgInvalidInput
     jmp promptLoop
 
 validChoice:
@@ -894,8 +854,7 @@ DisplayGameState PROC
     ; Show first dealer card
     mov eax, dealerHand[0]
     call GetCardName
-    call WriteString
-    call Crlf
+    mPrintString msgDealerHidden
 
     ; Display player's full hand
     mov edx, OFFSET msgPlayerHand
