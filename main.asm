@@ -657,20 +657,11 @@ PlayBlackjack PROC
 playerTurnLoop:
     ; Get player choice
     call GetPlayerChoice
-    or al, 20h                ; convert to lowercase
 
     ; Player stands
     cmp al, 's'
     je playerStands
 
-    ; Player hits
-    cmp al, 'h'
-    je playerHits
-
-    ; Invalid player move
-    jmp playerTurnLoop  
-
-playerHits:
     call DrawCard
     ; Add card to player hand
     mov ecx, playerHandSize
@@ -749,24 +740,17 @@ promptLoop:
 
     ; Read single character
     call ReadChar
-    call WriteChar        ; Echo the character
+    call WriteChar            ; Echo the character
     call Crlf
 
-    ; Convert to uppercase for comparison
-    cmp al, 'a'
-    jb checkValid         ; if < 'a', already uppercase or invalid
-    cmp al, 'z'
-    ja checkValid         ; if > 'z', invalid
-    sub al, 32            ; convert lowercase to uppercase
-
-checkValid:
-    ; Check if H or S
-    cmp al, 'H'
+    ; Input is S or H
+    or al, 20h                ; converts to lowercase
+    cmp al, 's'
     je validChoice
-    cmp al, 'S'
+    cmp al, 'h'
     je validChoice
 
-    ; Invalid input - show error and retry
+    ; Invalid input
     mPrintString msgInvalidInput
     jmp promptLoop
 
