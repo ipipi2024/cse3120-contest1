@@ -27,6 +27,7 @@ x86/
 
 # Temporary files
 temp.asm
+*.temp.asm
 *~
 *.tmp
 *.bak
