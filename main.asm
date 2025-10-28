@@ -31,19 +31,20 @@ msgStand BYTE "Stand", 0
 playerChoice BYTE ?
 
 ; Card names for display
-cardAce BYTE "Ace", 0
-card2 BYTE "2", 0
-card3 BYTE "3", 0
-card4 BYTE "4", 0
-card5 BYTE "5", 0
-card6 BYTE "6", 0
-card7 BYTE "7", 0
-card8 BYTE "8", 0
-card9 BYTE "9", 0
-card10 BYTE "10", 0
-cardJack BYTE "Jack", 0
-cardQueen BYTE "Queen", 0
-cardKing BYTE "King", 0
+; Each card is 8 bytes long, unused space is filled with 0
+cardAce BYTE "Ace", 5 DUP(0)
+card2 BYTE "2", 7 DUP(0)
+card3 BYTE "3", 7 DUP(0)
+card4 BYTE "4", 7 DUP(0)
+card5 BYTE "5", 7 DUP(0)
+card6 BYTE "6", 7 DUP(0)
+card7 BYTE "7", 7 DUP(0)
+card8 BYTE "8", 7 DUP(0)
+card9 BYTE "9", 7 DUP(0)
+card10 BYTE "10", 6 DUP(0)
+cardJack BYTE "Jack", 4 DUP(0)
+cardQueen BYTE "Queen", 2 DUP(0)
+cardKing BYTE "King", 4 DUP(0)
 
 ; Game display messages
 msgPlayerHand BYTE "Your hand: ", 0
@@ -207,72 +208,13 @@ GetCardValue ENDP
 ; Modifies: EDX only
 ;------------------------------------------
 GetCardName PROC
-    cmp eax, 1
-    je isAce
-    cmp eax, 2
-    je is2
-    cmp eax, 3
-    je is3
-    cmp eax, 4
-    je is4
-    cmp eax, 5
-    je is5
-    cmp eax, 6
-    je is6
-    cmp eax, 7
-    je is7
-    cmp eax, 8
-    je is8
-    cmp eax, 9
-    je is9
-    cmp eax, 10
-    je is10
-    cmp eax, 11
-    je isJack
-    cmp eax, 12
-    je isQueen
-    cmp eax, 13
-    je isKing
-    ret
+    dec eax                   ; EAX = 0-12
 
-isAce:
-    mov edx, OFFSET cardAce
-    ret
-is2:
-    mov edx, OFFSET card2
-    ret
-is3:
-    mov edx, OFFSET card3
-    ret
-is4:
-    mov edx, OFFSET card4
-    ret
-is5:
-    mov edx, OFFSET card5
-    ret
-is6:
-    mov edx, OFFSET card6
-    ret
-is7:
-    mov edx, OFFSET card7
-    ret
-is8:
-    mov edx, OFFSET card8
-    ret
-is9:
-    mov edx, OFFSET card9
-    ret
-is10:
-    mov edx, OFFSET card10
-    ret
-isJack:
-    mov edx, OFFSET cardJack
-    ret
-isQueen:
-    mov edx, OFFSET cardQueen
-    ret
-isKing:
-    mov edx, OFFSET cardKing
+    shl eax, 3                ; multiply by 8 (byte length of each variable)
+    mov edx, OFFSET cardAce   ; first card's offset
+    add edx, eax              ; add rank offset from first card
+
+    inc eax                   ; restore EAX
     ret
 GetCardName ENDP
 
