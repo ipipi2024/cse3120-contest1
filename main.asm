@@ -32,19 +32,19 @@ playerChoice BYTE ?
 
 ; Card names for display
 ; Each card is 8 bytes long, unused space is filled with 0
-cardAce BYTE "Ace", 5 DUP(0)
-card2 BYTE "2", 7 DUP(0)
-card3 BYTE "3", 7 DUP(0)
-card4 BYTE "4", 7 DUP(0)
-card5 BYTE "5", 7 DUP(0)
-card6 BYTE "6", 7 DUP(0)
-card7 BYTE "7", 7 DUP(0)
-card8 BYTE "8", 7 DUP(0)
-card9 BYTE "9", 7 DUP(0)
-card10 BYTE "10", 6 DUP(0)
-cardJack BYTE "Jack", 4 DUP(0)
-cardQueen BYTE "Queen", 2 DUP(0)
-cardKing BYTE "King", 4 DUP(0)
+cardNames BYTE "Ace", 5 DUP(0)
+BYTE "2",       7 DUP(0)
+BYTE "3",       7 DUP(0)
+BYTE "4",       7 DUP(0)
+BYTE "5",       7 DUP(0)
+BYTE "6",       7 DUP(0)
+BYTE "7",       7 DUP(0)
+BYTE "8",       7 DUP(0)
+BYTE "9",       7 DUP(0)
+BYTE "10",      6 DUP(0)
+BYTE "Jack",    4 DUP(0)
+BYTE "Queen",   3 DUP(0)
+BYTE "King",    4 DUP(0)
 
 ; Game display messages
 msgPlayerHand BYTE "Your hand: ", 0
@@ -93,9 +93,11 @@ msgNewCard BYTE "New card: ", 0
 ; Modifies: EDX
 ;------------------------------------------
 mPrintString MACRO string:REQ
+    push edx
     mov edx, OFFSET string
     call WriteString
     call Crlf
+    pop edx
 ENDM
 
 ;------------------------------------------
@@ -208,13 +210,14 @@ GetCardValue ENDP
 ; Modifies: EDX only
 ;------------------------------------------
 GetCardName PROC
+    push eax
     dec eax                   ; EAX = 0-12
 
     shl eax, 3                ; multiply by 8 (byte length of each variable)
-    mov edx, OFFSET cardAce   ; first card's offset
+    mov edx, OFFSET cardNames   ; first card's offset
     add edx, eax              ; add rank offset from first card
 
-    inc eax                   ; restore EAX
+    pop eax
     ret
 GetCardName ENDP
 
