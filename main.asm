@@ -46,8 +46,6 @@ BYTE "Jack",    4 DUP(0)
 BYTE "Queen",   3 DUP(0)
 BYTE "King",    4 DUP(0)
 
-cardName DWORD ?
-
 ; Game display messages
 msgPlayerHand BYTE "Your hand: ", 0
 msgDealerHand BYTE "Dealer shows: ", 0
@@ -76,9 +74,8 @@ msgDealerBlackjackWins BYTE "Dealer has BLACKJACK! Dealer wins!", 0
 msgBothBlackjack BYTE "Both have BLACKJACK! Push!", 0
 
 ; Game flow messages
-msgWelcome BYTE "========================================", 0
-msgTitle BYTE "       BLACKJACK GAME", 0
-msgDivider BYTE "========================================", 0
+msgTitle BYTE 7 DUP(" "), "BLACKJACK GAME", 0
+msgDivider BYTE 40 DUP("="), 0
 msgDealing BYTE "Dealing cards...", 0
 msgPlayerTurn BYTE "--- YOUR TURN ---", 0
 msgDealerTurn BYTE "--- DEALER'S TURN ---", 0
@@ -111,12 +108,15 @@ ENDM
 ; Output: none
 ; Modifies: EDX
 ;------------------------------------------
-mPrintCard MACRO
+mPrintCard MACRO card:REQ
     push edx
+    push eax
 
+    mov eax, card
     call GetCardName
     call WriteString
 
+    pop eax
     pop edx
 ENDM
 
@@ -562,7 +562,7 @@ PlayBlackjack PROC
     push esi
 
     ; Display welcome message
-    mPrintString msgWelcome
+    mPrintString msgDivider
     mPrintString msgTitle
     mPrintString msgDivider
     call Crlf
@@ -759,9 +759,7 @@ displayLoop:
 
 skipComma:
     ; Get card rank and display its name
-    mov eax, [esi]
-    call GetCardName      ; EDX = pointer to card name
-    call WriteString
+    mPrintCard [esi]
 
     inc edi               ; increment card counter
     add esi, TYPE playerHand
@@ -809,8 +807,7 @@ DisplayGameState PROC
     call WriteString
 
     ; Show first dealer card
-    mov eax, dealerHand[0]
-    mPrintCard
+    mPrintCard dealerHand[0]
 
     ; Display player's full hand
     mov edx, OFFSET msgPlayerHand
@@ -835,9 +832,7 @@ displayPlayerLoop:
 
 skipPlayerComma:
     ; Display card name
-    mov eax, [esi]
-    call GetCardName
-    call WriteString
+    mPrintCard [esi]
 
     inc edi
     add esi, TYPE playerHand
