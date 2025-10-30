@@ -46,6 +46,8 @@ BYTE "Jack",    4 DUP(0)
 BYTE "Queen",   3 DUP(0)
 BYTE "King",    4 DUP(0)
 
+cardName DWORD ?
+
 ; Game display messages
 msgPlayerHand BYTE "Your hand: ", 0
 msgDealerHand BYTE "Dealer shows: ", 0
@@ -94,9 +96,27 @@ msgNewCard BYTE "New card: ", 0
 ;------------------------------------------
 mPrintString MACRO string:REQ
     push edx
+
     mov edx, OFFSET string
     call WriteString
     call Crlf
+
+    pop edx
+ENDM
+
+;------------------------------------------
+; mPrintCard MACRO
+; Description: Prints the name of a card's rank
+; Input: EAX - rank of card (1-13)
+; Output: none
+; Modifies: EDX
+;------------------------------------------
+mPrintCard MACRO
+    push edx
+
+    call GetCardName
+    call WriteString
+
     pop edx
 ENDM
 
@@ -790,8 +810,7 @@ DisplayGameState PROC
 
     ; Show first dealer card
     mov eax, dealerHand[0]
-    call GetCardName
-    mPrintString msgDealerHidden
+    mPrintCard
 
     ; Display player's full hand
     mov edx, OFFSET msgPlayerHand
