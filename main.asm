@@ -244,6 +244,7 @@ GetCardName ENDP
 CalculateHandValue PROC
     push esi
     push edi
+    push ebx
 
     mov eax, 0            ; total = 0
     mov ebx, 0            ; aceCount = 0
@@ -288,6 +289,7 @@ notAce:
 aceOptimized:
 noAceOptimization:
 emptyHand:
+    pop ebx
     pop edi
     pop esi
     ret
