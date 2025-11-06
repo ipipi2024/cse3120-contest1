@@ -36,3 +36,6 @@ temp.asm
 
 #docs
 *.docx
+
+#md
+presentation.md

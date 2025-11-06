@@ -66,7 +66,6 @@ o	If Hit:
 	-If player busts (> 21): Dealer wins, end game
     -If player < 21: repeat this step
 oIf Stand: proceed to dealer turn
-
 6.	Dealer Turn 
 o	Reveal dealer's hidden card
 o	While dealer total < 17: 
