@@ -22,7 +22,6 @@ msgTotal BYTE " = Total: ", 0
 ; User input messages
 msgPrompt BYTE "Hit or Stand? (H/S): ", 0
 msgInvalidInput BYTE "Invalid input! Please enter H or S.", 0
-playerChoice BYTE ?
 
 ; Card names for display
 ; Each card is 8 bytes long, unused space is filled with 0
@@ -48,7 +47,7 @@ msgComma BYTE ", ", 0
 
 ; Dealer messages
 msgDealerReveals BYTE "Dealer reveals: ", 0
-msgDealerHits BYTE "Dealer hits...", 0
+msgDealerHits BYTE "Dealer hits... ", 0
 msgDealerStands BYTE "Dealer stands.", 0
 msgDealerTotal BYTE "Dealer's total: ", 0
 msgDealerBust BYTE "Dealer busts!", 0
@@ -72,7 +71,6 @@ msgGameOver BYTE "========== GAME OVER ==========", 0
 msgNewCard BYTE "New card: ", 0
 
 .code
-
 ;------------------------------------------
 ; mPrintString MACRO
 ; Description: Prints/writes a given string to the screen, then prints a newline
@@ -704,7 +702,6 @@ promptLoop:
     jmp promptLoop
 
 validChoice:
-    mov playerChoice, al
     pop edx
     ret
 GetPlayerChoice ENDP
