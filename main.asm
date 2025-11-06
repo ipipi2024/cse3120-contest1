@@ -153,16 +153,14 @@ DrawCard PROC
     push edi
 
 tryAgain:
-    ; Generate random number 1-13
+    ; Generate random number 0-12
     mov eax, 13
     call RandomRange      ; EAX = 0-12
-    inc eax               ; shift to 1-13
 
     ; Check if this rank is available (count > 0)
-    mov ecx, eax          ; save card rank
-    dec ecx               ; convert to 0-based index
+    mov ecx, eax          ; save card rank (0-12)
     mov edi, OFFSET deckCounts
-    mov eax, [edi + ecx*TYPE deckCounts] ; get deckCounts[rank-1]
+    mov eax, [edi + ecx*TYPE deckCounts] ; get deckCounts[rank]
     cmp eax, 0
     je tryAgain           ; if count = 0, try another card
 
@@ -170,9 +168,9 @@ tryAgain:
     dec eax
     mov [edi + ecx*TYPE deckCounts], eax
 
-    ; Restore card rank to EAX for return
+    ; Convert to 1-13 for return
     mov eax, ecx
-    inc eax               ; convert back to 1-13
+    inc eax               ; convert 0-12 to 1-13
 
     pop edi
     pop ecx
