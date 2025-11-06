@@ -91,12 +91,14 @@ msgNewCard BYTE "New card: ", 0
 ; Output: None
 ; Modifies: EDX
 ;------------------------------------------
-mPrintString MACRO string:REQ
+mPrintString MACRO string:REQ, newLine
     push edx
 
     mov edx, OFFSET string
     call WriteString
-    call Crlf
+    IFB <newLine>
+        call Crlf
+    ENDIF
 
     pop edx
 ENDM
@@ -108,13 +110,15 @@ ENDM
 ; Output: none
 ; Modifies: EDX
 ;------------------------------------------
-mPrintCard MACRO card:REQ
+mPrintCard MACRO card
     push edx
     push eax
 
-    mov eax, card
+    IFNB <card>
+        mov eax, card
+    ENDIF
     call GetCardName
-    call WriteString
+    call WriteString 
 
     pop eax
     pop edx
@@ -355,8 +359,8 @@ DealerPlay PROC
     push esi
 
     ; Display dealer's full hand
-    mov edx, OFFSET msgDealerReveals
-    call WriteString
+
+    mPrintString msgDealerReveals, 0
     mov esi, OFFSET dealerHand
     mov ecx, dealerHandSize
     call DisplayHand
@@ -373,7 +377,7 @@ dealerLoop:
     jae dealerStands      ; if >= 17, dealer stands
 
     ; Dealer hits
-    mPrintString msgDealerHits
+    mPrintString msgDealerHits, 0
 
     ; Draw a card
     call DrawCard
@@ -389,10 +393,7 @@ dealerLoop:
     inc dealerHandSize
 
     ; Display new card
-    call GetCardName
-    call WriteString
-    mov edx, OFFSET msgSpace
-    call WriteString
+    mPrintCard
 
     ; Show updated total
     mov esi, OFFSET dealerHand
@@ -400,8 +401,7 @@ dealerLoop:
     call CalculateHandValue
     mov ebx, eax
 
-    mov edx, OFFSET msgDealerTotal
-    call WriteString
+    mPrintString msgDealerTotal, 0
     mov eax, ebx
     call WriteDec
     call Crlf
@@ -415,9 +415,7 @@ dealerLoop:
 
 dealerStands:
     mPrintString msgDealerStands
-
-    mov edx, OFFSET msgDealerTotal
-    call WriteString
+    mPrintString msgDealerTotal, 0
     mov eax, ebx
     call WriteDec
     call Crlf
@@ -639,10 +637,9 @@ playerTurnLoop:
     inc playerHandSize
 
     ; Display new card
-    mov edx, OFFSET msgNewCard
-    call WriteString
-    call GetCardName
-    mPrintString msgNewCard
+    mPrintString msgNewCard, 0
+    mPrintCard
+    call Crlf
 
     ; Display updated hand
     mov esi, OFFSET playerHand
@@ -700,8 +697,7 @@ GetPlayerChoice PROC
 
 promptLoop:
     ; Display prompt
-    mov edx, OFFSET msgPrompt
-    call WriteString
+    mPrintString msgPrompt, 0
 
     ; Read single character
     call ReadChar
@@ -743,8 +739,7 @@ DisplayHand PROC
     mov edi, 0            ; counter for commas
 
     ; Display "Hand: "
-    mov edx, OFFSET msgHand
-    call WriteString
+    mPrintString msgHand, 0
 
     ; Display each card
     mov ecx, ebx
@@ -753,8 +748,7 @@ displayLoop:
     cmp edi, 0
     je skipComma
     push eax
-    mov edx, OFFSET msgComma
-    call WriteString
+    mPrintString msgComma, 0
     pop eax
 
 skipComma:
@@ -773,8 +767,7 @@ skipComma:
     mov ecx, ebx          ; ECX = hand size for CalculateHandValue
     call CalculateHandValue
 
-    mov edx, OFFSET msgTotal
-    call WriteString
+    mPrintString msgTotal, 0
     call WriteDec
     call Crlf
 
@@ -803,15 +796,14 @@ DisplayGameState PROC
     call Crlf
 
     ; Display dealer's hand (only first card visible)
-    mov edx, OFFSET msgDealerHidden
-    call WriteString
+    mPrintString msgDealerHidden, 0
 
     ; Show first dealer card
     mPrintCard dealerHand[0]
+    call Crlf
 
     ; Display player's full hand
-    mov edx, OFFSET msgPlayerHand
-    call WriteString
+    mPrintString msgPlayerHand, 0
 
     ; Display all player cards with commas
     mov esi, OFFSET playerHand
@@ -826,8 +818,7 @@ displayPlayerLoop:
     cmp edi, 0
     je skipPlayerComma
     push eax
-    mov edx, OFFSET msgComma
-    call WriteString
+    mPrintString msgComma, 0
     pop eax
 
 skipPlayerComma:
@@ -845,8 +836,7 @@ doneDisplaying:
     mov ecx, playerHandSize
     call CalculateHandValue
 
-    mov edx, OFFSET msgTotal
-    call WriteString
+    mPrintString msgTotal, 0
     call WriteDec
     call Crlf
     call Crlf
