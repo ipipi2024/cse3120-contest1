@@ -7,8 +7,6 @@ ExitProcess proto, dwExitCode:dword
 .data
 deckCounts DWORD 13 DUP(4)    ; 13 card ranks, each starts with count of 4
 totalCardsDrawn DWORD 0       ; total cards drawn from deck
-msgRank BYTE "Rank: ", 0
-msgValue BYTE " -> Value: ", 0
 currentCard DWORD ?           ; temporary storage for current card
 
 ; Hand storage (max 11 cards possible in blackjack before bust)
@@ -20,14 +18,10 @@ dealerHandSize DWORD 0        ; number of cards in dealer hand
 ; Test messages
 msgHand BYTE "Hand: ", 0
 msgTotal BYTE " = Total: ", 0
-msgSpace BYTE " ", 0
 
 ; User input messages
 msgPrompt BYTE "Hit or Stand? (H/S): ", 0
 msgInvalidInput BYTE "Invalid input! Please enter H or S.", 0
-msgYouChose BYTE "You chose: ", 0
-msgHit BYTE "Hit", 0
-msgStand BYTE "Stand", 0
 playerChoice BYTE ?
 
 ; Card names for display
@@ -52,11 +46,6 @@ msgDealerHand BYTE "Dealer shows: ", 0
 msgDealerHidden BYTE "Dealer has: [Hidden Card] ", 0
 msgComma BYTE ", ", 0
 
-; Blackjack messages
-msgBlackjack BYTE "BLACKJACK!", 0
-msgNotBlackjack BYTE "Not a blackjack (but total is 21)", 0
-msgTestBlackjack BYTE "Testing: ", 0
-
 ; Dealer messages
 msgDealerReveals BYTE "Dealer reveals: ", 0
 msgDealerHits BYTE "Dealer hits...", 0
@@ -74,7 +63,7 @@ msgDealerBlackjackWins BYTE "Dealer has BLACKJACK! Dealer wins!", 0
 msgBothBlackjack BYTE "Both have BLACKJACK! Push!", 0
 
 ; Game flow messages
-msgTitle BYTE 7 DUP(" "), "BLACKJACK GAME", 0
+msgTitle BYTE 13 DUP(" "), "BLACKJACK GAME", 0
 msgDivider BYTE 40 DUP("="), 0
 msgDealing BYTE "Dealing cards...", 0
 msgPlayerTurn BYTE "--- YOUR TURN ---", 0
@@ -394,6 +383,7 @@ dealerLoop:
 
     ; Display new card
     mPrintCard
+    call Crlf
 
     ; Show updated total
     mov esi, OFFSET dealerHand
@@ -590,8 +580,6 @@ PlayBlackjack PROC
     call DrawCard
     mov dealerHand[4], eax
     mov dealerHandSize, 2
-
-    call Crlf
 
     ; Display initial game state
     call DisplayGameState
