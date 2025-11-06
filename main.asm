@@ -80,15 +80,15 @@ msgNewCard BYTE "New card: ", 0
 ; Output: None
 ; Modifies: EDX
 ;------------------------------------------
-mPrintString MACRO string:REQ, newLine
+mPrintString MACRO string, newLine
     push edx
-
-    mov edx, OFFSET string
+    IFNB <string>
+        mov edx, OFFSET string
+    ENDIF
     call WriteString
     IFB <newLine>
         call Crlf
     ENDIF
-
     pop edx
 ENDM
 
@@ -100,17 +100,15 @@ ENDM
 ; Modifies: EDX
 ;------------------------------------------
 mPrintCard MACRO card
-    push edx
     push eax
 
     IFNB <card>
         mov eax, card
     ENDIF
     call GetCardName
-    call WriteString 
+    mPrintString ,0 
 
     pop eax
-    pop edx
 ENDM
 
 ;------------------------------------------
